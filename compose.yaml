@@ -1,0 +1,53 @@
+services:
+  db:
+    image: postgres:18
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    environment:
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets:
+      - db_password
+    volumes:
+      - ./postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      - db_data:/var/lib/postgresql
+    ports:
+      - "127.0.0.1:5432:5432"
+    shm_size: 1GB
+    deploy:
+      resources:
+        limits:
+          memory: 4GB
+    healthcheck:
+      test: "pg_isready -U postgres"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  bot:
+    build: .
+    environment:
+      DB_HOST: db
+      SECRETS: /run/secrets
+    secrets:
+      - bot_admins
+      - bot_token
+      - db_password
+      - gigachat_token
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  db_data:
+    name: socrates
+
+secrets:
+  bot_admins:
+    file: secrets/bot_admins
+  bot_token:
+    file: secrets/bot_token
+  db_password:
+    file: secrets/db_password
+  gigachat_token:
+    file: secrets/gigachat_token

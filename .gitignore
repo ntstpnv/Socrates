@@ -1,0 +1,7 @@
+.idea/
+.ruff_cache/
+.venv/
+__pycache__/
+
+backups/
+secrets/
